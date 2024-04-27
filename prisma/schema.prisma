@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id                 Int       @id @default(autoincrement())
+    username           String    @unique
+    email              String    @unique
+    password           String
+    role               String    @default("author")
+    isActive           Boolean   @default(true)
+    isVerified         Boolean   @default(false)
+    verificationToken  String?
+    limitWrongPassword Int       @default(0)
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime? @updatedAt
+    articles           Article[]
+  
+    @@map("users")
+  }
+  
+  
+  model Category {
+    id       String    @id
+    title    String
+    articles Article[]
+    @@map("categories")
+  }
+  
+  model Article {
+    id          Int       @id @default(autoincrement())
+    authorId    Int       
+    author      User      @relation(fields: [authorId], references: [id])
+    title       String
+    description String    @db.Text
+    urlImage    String    @db.Text
+    categoryId  String    
+    category    Category  @relation(fields: [categoryId], references: [id])
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    @@map("articles")
+  }
+  
+  model BlogCategory {
+    id         String  @id
+    title      String
+    blogs      Blog[]
+    @@map("blog_categories")
+  }
+  
+  model Blog {
+    id          Int          @id @default(autoincrement())
+    urlImage    String       @db.Text
+    author      String
+    description String       @db.Text
+    date        DateTime     @default(now())
+    linkUrl     String       @db.Text
+    categoryId  String
+    category    BlogCategory @relation(fields: [categoryId], references: [id])
+    @@map("blogs")
+  }
+  
