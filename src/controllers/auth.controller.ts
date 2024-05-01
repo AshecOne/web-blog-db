@@ -2,7 +2,7 @@ import { genSalt, hash, compareSync } from "bcrypt";
 import prisma from "../prisma";
 import { Request, Response } from "express";
 import { sign } from "jsonwebtoken";
-import { trasnporter } from "../lib/nodemailer";
+import { forgotPassword, sendEmail } from "../utils/emailSender";
 
 export class AuthController {
   async registerUser(req: Request, resp: Response) {
@@ -27,39 +27,42 @@ export class AuthController {
       const salt = await genSalt(10);
       const hashPassword = await hash(password, salt);
 
-      // Generate verification token
-      const verificationToken =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
+      // Generate otp
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // Save verification token to the user record
+      // Generate verification token
+      const verificationToken = sign(
+        { email },
+        process.env.TOKEN_KEY || "secret",
+        { expiresIn: "1h" }
+      );
+
       const newUser = await prisma.user.create({
         data: {
           username,
           email,
           password: hashPassword,
           role,
+          otp,
           verificationToken,
-        } as any,
+        },
       });
 
       // Send verification email
-      await trasnporter.sendMail({
-        from: process.env.MAIL_SENDER,
-        to: email,
-        subject: "Verify your email address",
-        html: `
-    <p>Welcome, ${username}!</p>
-    <p>Please click the following link to verify your email address:</p>
-    <a href="${process.env.CLIENT_URL}/verify-email?token=${verificationToken}">Verify Email</a>
-  `,
-      });
+      const subject = "Verify your email address";
+      const content = null;
+      const data = {
+        username,
+        otp,
+        link: `http://localhost:3001/verify/${verificationToken}`,
+      };
+      await sendEmail(email, subject, content, data);
 
       return resp.status(201).send({
         rc: 201,
         success: true,
-        message: "User registered successfully",
-        data: newUser,
+        message:
+          "User registered successfully. Please check your email for verification.",
       });
     } catch (error) {
       console.log(error);
@@ -69,11 +72,13 @@ export class AuthController {
 
   async verifyEmail(req: Request, resp: Response) {
     try {
-      const { token } = req.query;
-
-      // Find user by verification token
+      const { token } = req.params;
+      const { otp } = req.body;
+      // Temukan pengguna berdasarkan token verifikasi
       const user = await prisma.user.findFirst({
-        where: { verificationToken: token as string },
+        where: {
+          verificationToken: token,
+        },
       });
 
       if (!user) {
@@ -84,12 +89,24 @@ export class AuthController {
         });
       }
 
-      // Update user's verification status
-      await prisma.user.update({
-        where: { id: user.id },
+      // Verifikasi OTP
+      if (user.otp !== otp) {
+        return resp.status(400).send({
+          rc: 400,
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+
+      // Update status verifikasi pengguna menjadi true
+      const updatedUser = await prisma.user.update({
+        where: {
+          id: user.id,
+        },
         data: {
           isVerified: true,
           verificationToken: null,
+          otp: null,
         },
       });
 
@@ -97,10 +114,92 @@ export class AuthController {
         rc: 200,
         success: true,
         message: "Email verified successfully",
+        data: updatedUser,
       });
     } catch (error) {
       console.log(error);
       return resp.status(500).send(error);
+    }
+  }
+
+  async forgotPassword(req: Request, resp: Response) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return resp.status(400).json({ message: "Email is required" });
+      }
+
+      const findUser = await prisma.user.findUnique({
+        where: { email, isVerified: true },
+      });
+
+      if (!findUser) {
+        return resp.status(400).json({ message: "Invalid user" });
+      }
+
+      const username = findUser.username;
+      const token = sign(
+        { id: findUser.id, role: findUser.role },
+        process.env.TOKEN_KEY || "secret",
+        { expiresIn: "1h" } // Waktu kadaluarsa token
+      );
+
+      const subject = "Forgot Password [NEW]";
+      const data = {
+        username,
+        link: `http://localhost:3001/verifyPassword/${token}`,
+      };
+
+      await forgotPassword(email, subject, null, data);
+
+      return resp.status(201).json({
+        rc: 201,
+        success: true,
+        result: data,
+      });
+    } catch (error) {
+      // Cast 'error' to 'any' to access its properties
+      const errorMessage =
+        (error as any).message || "An unknown error occurred";
+      console.error("Forgot password error:", errorMessage);
+
+      return resp.status(500).json({
+        message: "An error occurred while processing your request",
+        error: errorMessage,
+      });
+    }
+  }
+
+  async verifyForgotPassword(req: Request, res: Response) {
+    try {
+      const { id } = res.locals.decodedToken;
+      const password = req.body.password;
+
+      const findUser = await prisma.user.findUnique({
+        where: { id },
+      });
+
+      if (!findUser) {
+        throw { rc: 400, success: false, message: "Invalid user" };
+      }
+
+      // Hash password
+      const salt = await genSalt(10);
+      const hashPassword = await hash(password, salt);
+
+      const updateVerified = await prisma.user.update({
+        where: { id },
+        data: { password: hashPassword },
+      });
+
+      return res.status(201).send({
+        rc: 201,
+        success: true,
+        result: updateVerified,
+      });
+    } catch (error) {
+      console.error("Error in verifyForgotPassword:", error);
+      return res.status(500).send({ error: "Internal Server Error" });
     }
   }
 
@@ -112,17 +211,14 @@ export class AuthController {
       // Cari pengguna berdasarkan email atau username
       const findUser = await prisma.user.findFirst({
         where: {
-          OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
+          OR: [
+            { email: emailOrUsername, isVerified: true },
+            { username: emailOrUsername, isVerified: true },
+          ],
         },
       });
 
       console.log(findUser);
-      if (!findUser?.isVerified) {
-        return resp.status(403).send({
-          success: false,
-          message: "Please verify your email before logging in.",
-        });
-      }
 
       if (findUser) {
         // Periksa kecocokan password

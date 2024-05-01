@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/verifyToken";
 import { regisValidation } from "../middleware/vaidator/regis";
+import { passwordValidation } from "../middleware/vaidator/forgotPassword";
 
 export class AuthRouter {
   private route: Router;
@@ -19,7 +20,9 @@ export class AuthRouter {
       regisValidation,
       this.authController.registerUser
     );
-    this.route.get("/verify-email", this.authController.verifyEmail);
+    this.route.post("/verify-email/:token", verifyToken, this.authController.verifyEmail);
+    this.route.post("/forgot-password/", this.authController.forgotPassword);
+    this.route.post("/verify-password/:token", verifyToken, passwordValidation, this.authController.verifyForgotPassword);
     this.route.post("/signin", this.authController.signIn);
     this.route.get("/keeplogin", verifyToken, this.authController.keepLogin);
   }

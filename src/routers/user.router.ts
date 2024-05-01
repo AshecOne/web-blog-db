@@ -12,8 +12,8 @@ export class UserRouter {
   }
 
   private initializeRoutes(): void {
-    this.route.get("/:id", this.userController.getUser);
-    this.route.post("/:id", this.userController.updateUser);
+    this.route.post("/signup", this.userController.signUp);
+    this.route.get("/signin", this.userController.signIn);
   }
 
   getRouter(): Router {
