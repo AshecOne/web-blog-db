@@ -20,7 +20,9 @@ class App {
   }
 
   private configure(): void {
-    this.app.use(cors()); // for config accessibility
+    this.app.use(cors({
+      origin: 'https://ashecone.github.io',
+    })); // for config accessibility
     this.app.use(express.json()); // for receive req.body
   }
 
