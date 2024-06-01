@@ -20,9 +20,16 @@ export class AuthRouter {
       regisValidation,
       this.authController.registerUser
     );
-    this.route.post("/verify-email/:token", verifyToken, this.authController.verifyEmail);
+    this.route.post(
+      "/verify-email/:token",
+      verifyToken,
+      this.authController.verifyEmail
+    );
     this.route.post("/forgot-password/", this.authController.forgotPassword);
-    this.route.post("/verify-password/:token", verifyToken, passwordValidation, this.authController.verifyForgotPassword);
+    this.route.post(
+      "/reset-password/:token",
+      this.authController.resetPassword
+    );
     this.route.post("/signin", this.authController.signIn);
     this.route.get("/keeplogin", verifyToken, this.authController.keepLogin);
   }

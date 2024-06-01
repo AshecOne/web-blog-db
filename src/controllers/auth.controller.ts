@@ -1,7 +1,7 @@
 import { genSalt, hash, compareSync } from "bcrypt";
 import prisma from "../prisma";
 import { Request, Response } from "express";
-import { sign } from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import { forgotPassword, sendEmail } from "../utils/emailSender";
 
 export class AuthController {
@@ -31,32 +31,30 @@ export class AuthController {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
       // Generate verification token
-      const verificationToken = sign(
-        { email },
-        process.env.TOKEN_KEY || "secret",
-        { expiresIn: "1h" }
-      );
+    const verificationToken = sign(
+      { email },
+      process.env.TOKEN_KEY || "secret",
+      { expiresIn: "1h" }
+    );
 
-      const newUser = await prisma.user.create({
-        data: {
-          username,
-          email,
-          password: hashPassword,
-          role,
-          otp,
-          verificationToken,
-        },
-      });
-
-      // Send verification email
-      const subject = "Verify your email address";
-      const content = null;
-      const data = {
+    const newUser = await prisma.user.create({
+      data: {
         username,
-        otp,
-        link: `http://localhost:3001/verify/${verificationToken}`,
-      };
-      await sendEmail(email, subject, content, data);
+        email,
+        password: hashPassword,
+        role,
+        verificationToken,
+      },
+    });
+
+    // Send verification email
+    const subject = "Verify your email address";
+    const content = null;
+    const data = {
+      username,
+      link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
+    };
+    await sendEmail(email, subject, content, data);
 
       return resp.status(201).send({
         rc: 201,
@@ -73,14 +71,14 @@ export class AuthController {
   async verifyEmail(req: Request, resp: Response) {
     try {
       const { token } = req.params;
-      const { otp } = req.body;
+  
       // Temukan pengguna berdasarkan token verifikasi
       const user = await prisma.user.findFirst({
         where: {
           verificationToken: token,
         },
       });
-
+  
       if (!user) {
         return resp.status(400).send({
           rc: 400,
@@ -88,16 +86,7 @@ export class AuthController {
           message: "Invalid verification token",
         });
       }
-
-      // Verifikasi OTP
-      if (user.otp !== otp) {
-        return resp.status(400).send({
-          rc: 400,
-          success: false,
-          message: "Invalid OTP",
-        });
-      }
-
+  
       // Update status verifikasi pengguna menjadi true
       const updatedUser = await prisma.user.update({
         where: {
@@ -106,10 +95,9 @@ export class AuthController {
         data: {
           isVerified: true,
           verificationToken: null,
-          otp: null,
         },
       });
-
+  
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -128,41 +116,41 @@ export class AuthController {
       if (!email) {
         return resp.status(400).json({ message: "Email is required" });
       }
-
+  
       const findUser = await prisma.user.findUnique({
         where: { email, isVerified: true },
       });
-
+  
       if (!findUser) {
         return resp.status(400).json({ message: "Invalid user" });
       }
-
+  
       const username = findUser.username;
       const token = sign(
         { id: findUser.id, role: findUser.role },
         process.env.TOKEN_KEY || "secret",
         { expiresIn: "1h" } // Waktu kadaluarsa token
       );
-
-      const subject = "Forgot Password [NEW]";
+  
+      const subject = "Reset Password";
       const data = {
         username,
-        link: `http://localhost:3001/verifyPassword/${token}`,
+        link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password/${token}`,
       };
-
+  
       await forgotPassword(email, subject, null, data);
-
+  
       return resp.status(201).json({
         rc: 201,
         success: true,
-        result: data,
+        message: "Password reset email sent successfully",
       });
     } catch (error) {
       // Cast 'error' to 'any' to access its properties
       const errorMessage =
         (error as any).message || "An unknown error occurred";
       console.error("Forgot password error:", errorMessage);
-
+  
       return resp.status(500).json({
         message: "An error occurred while processing your request",
         error: errorMessage,
@@ -170,36 +158,40 @@ export class AuthController {
     }
   }
 
-  async verifyForgotPassword(req: Request, res: Response) {
+  async resetPassword(req: Request, resp: Response) {
     try {
-      const { id } = res.locals.decodedToken;
-      const password = req.body.password;
+      const { token } = req.params;
+      const { password } = req.body;
+
+      // Verifikasi token
+      const decodedToken = verify(token, process.env.TOKEN_KEY || "secret") as { id: number };
+      const userId = decodedToken.id;
 
       const findUser = await prisma.user.findUnique({
-        where: { id },
+        where: { id: userId },
       });
 
       if (!findUser) {
-        throw { rc: 400, success: false, message: "Invalid user" };
+        return resp.status(400).json({ message: "Invalid user" });
       }
 
       // Hash password
       const salt = await genSalt(10);
       const hashPassword = await hash(password, salt);
 
-      const updateVerified = await prisma.user.update({
-        where: { id },
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
         data: { password: hashPassword },
       });
 
-      return res.status(201).send({
-        rc: 201,
+      return resp.status(200).json({
+        rc: 200,
         success: true,
-        result: updateVerified,
+        message: "Password reset successfully",
       });
     } catch (error) {
-      console.error("Error in verifyForgotPassword:", error);
-      return res.status(500).send({ error: "Internal Server Error" });
+      console.error("Error in resetPassword:", error);
+      return resp.status(500).json({ message: "Internal Server Error" });
     }
   }
 
