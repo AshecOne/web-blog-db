@@ -29,7 +29,9 @@ class App {
         this.routes();
     }
     configure() {
-        this.app.use((0, cors_1.default)()); // for config accessibility
+        this.app.use((0, cors_1.default)({
+            origin: 'https://ashecone.github.io',
+        })); // for config accessibility
         this.app.use(express_1.default.json()); // for receive req.body
     }
     // to define routes config from routers directory

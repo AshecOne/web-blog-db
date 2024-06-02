@@ -47,7 +47,6 @@ class AuthController {
                         email,
                         password: hashPassword,
                         role,
-                        otp,
                         verificationToken,
                     },
                 });
@@ -56,8 +55,7 @@ class AuthController {
                 const content = null;
                 const data = {
                     username,
-                    otp,
-                    link: `http://localhost:3001/verify/${verificationToken}`,
+                    link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
                 };
                 yield (0, emailSender_1.sendEmail)(email, subject, content, data);
                 return resp.status(201).send({
@@ -76,7 +74,6 @@ class AuthController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { token } = req.params;
-                const { otp } = req.body;
                 // Temukan pengguna berdasarkan token verifikasi
                 const user = yield prisma_1.default.user.findFirst({
                     where: {
@@ -90,14 +87,6 @@ class AuthController {
                         message: "Invalid verification token",
                     });
                 }
-                // Verifikasi OTP
-                if (user.otp !== otp) {
-                    return resp.status(400).send({
-                        rc: 400,
-                        success: false,
-                        message: "Invalid OTP",
-                    });
-                }
                 // Update status verifikasi pengguna menjadi true
                 const updatedUser = yield prisma_1.default.user.update({
                     where: {
@@ -106,7 +95,6 @@ class AuthController {
                     data: {
                         isVerified: true,
                         verificationToken: null,
-                        otp: null,
                     },
                 });
                 return resp.status(200).send({
@@ -138,16 +126,16 @@ class AuthController {
                 const username = findUser.username;
                 const token = (0, jsonwebtoken_1.sign)({ id: findUser.id, role: findUser.role }, process.env.TOKEN_KEY || "secret", { expiresIn: "1h" } // Waktu kadaluarsa token
                 );
-                const subject = "Forgot Password [NEW]";
+                const subject = "Reset Password";
                 const data = {
                     username,
-                    link: `http://localhost:3001/verifyPassword/${token}`,
+                    link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password/${token}`,
                 };
                 yield (0, emailSender_1.forgotPassword)(email, subject, null, data);
                 return resp.status(201).json({
                     rc: 201,
                     success: true,
-                    result: data,
+                    message: "Password reset email sent successfully",
                 });
             }
             catch (error) {
@@ -161,33 +149,36 @@ class AuthController {
             }
         });
     }
-    verifyForgotPassword(req, res) {
+    resetPassword(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id } = res.locals.decodedToken;
-                const password = req.body.password;
+                const { token } = req.params;
+                const { password } = req.body;
+                // Verifikasi token
+                const decodedToken = (0, jsonwebtoken_1.verify)(token, process.env.TOKEN_KEY || "secret");
+                const userId = decodedToken.id;
                 const findUser = yield prisma_1.default.user.findUnique({
-                    where: { id },
+                    where: { id: userId },
                 });
                 if (!findUser) {
-                    throw { rc: 400, success: false, message: "Invalid user" };
+                    return resp.status(400).json({ message: "Invalid user" });
                 }
                 // Hash password
                 const salt = yield (0, bcrypt_1.genSalt)(10);
                 const hashPassword = yield (0, bcrypt_1.hash)(password, salt);
-                const updateVerified = yield prisma_1.default.user.update({
-                    where: { id },
+                const updatedUser = yield prisma_1.default.user.update({
+                    where: { id: userId },
                     data: { password: hashPassword },
                 });
-                return res.status(201).send({
-                    rc: 201,
+                return resp.status(200).json({
+                    rc: 200,
                     success: true,
-                    result: updateVerified,
+                    message: "Password reset successfully",
                 });
             }
             catch (error) {
-                console.error("Error in verifyForgotPassword:", error);
-                return res.status(500).send({ error: "Internal Server Error" });
+                console.error("Error in resetPassword:", error);
+                return resp.status(500).json({ message: "Internal Server Error" });
             }
         });
     }
