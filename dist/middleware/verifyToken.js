@@ -13,12 +13,18 @@ exports.verifyToken = void 0;
 const jsonwebtoken_1 = require("jsonwebtoken");
 const verifyToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const token = req.params.token;
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: "Authorization header not found" });
+        }
+        const token = authHeader.split(" ")[1];
         if (!token) {
             return res.status(401).json({ error: "Token not found" });
         }
+        console.log("Token received:", token);
         const decoded = (0, jsonwebtoken_1.verify)(token, process.env.TOKEN_KEY || "secret");
-        res.locals.decodedToken = decoded;
+        console.log("Decoded token:", decoded);
+        res.locals.decript = decoded;
         next();
     }
     catch (error) {
