@@ -94,8 +94,8 @@ class AuthController {
                 const findUser = yield prisma_1.default.user.findFirst({
                     where: {
                         OR: [
-                            { email: emailOrUsername, isVerified: true },
-                            { username: emailOrUsername, isVerified: true },
+                            { email: emailOrUsername },
+                            { username: emailOrUsername },
                         ],
                     },
                 });

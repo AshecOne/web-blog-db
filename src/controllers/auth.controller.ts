@@ -82,8 +82,8 @@ export class AuthController {
       const findUser = await prisma.user.findFirst({
         where: {
           OR: [
-            { email: emailOrUsername, isVerified: true },
-            { username: emailOrUsername, isVerified: true },
+            { email: emailOrUsername},
+            { username: emailOrUsername},
           ],
         },
       });
