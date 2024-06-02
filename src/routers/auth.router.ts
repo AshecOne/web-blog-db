@@ -20,6 +20,7 @@ export class AuthRouter {
       regisValidation,
       this.authController.registerUser
     );
+    this.route.get("/", this.authController.checkEmailExists);
     this.route.post(
       "/verify-email/:token",
       verifyToken,

@@ -13,6 +13,7 @@ class AuthRouter {
     }
     initializeRoutes() {
         this.route.post("/regis", regis_1.regisValidation, this.authController.registerUser);
+        this.route.get("/", this.authController.checkEmailExists);
         this.route.post("/verify-email/:token", verifyToken_1.verifyToken, this.authController.verifyEmail);
         this.route.post("/forgot-password/", this.authController.forgotPassword);
         this.route.post("/reset-password/:token", this.authController.resetPassword);

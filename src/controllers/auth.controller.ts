@@ -68,6 +68,33 @@ export class AuthController {
     }
   }
 
+  async checkEmailExists(req: Request, resp: Response) {
+    try {
+      const { email } = req.query;
+  
+      const user = await prisma.user.findUnique({
+        where: { email: email as string },
+      });
+  
+      if (user) {
+        return resp.status(200).send({
+          rc: 200,
+          success: true,
+          exists: true,
+        });
+      } else {
+        return resp.status(200).send({
+          rc: 200,
+          success: true,
+          exists: false,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      return resp.status(500).send(error);
+    }
+  }
+
   async verifyEmail(req: Request, resp: Response) {
     try {
       const { token } = req.params;
