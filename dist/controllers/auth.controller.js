@@ -16,7 +16,6 @@ exports.AuthController = void 0;
 const bcrypt_1 = require("bcrypt");
 const prisma_1 = __importDefault(require("../prisma"));
 const jsonwebtoken_1 = require("jsonwebtoken");
-const emailSender_1 = require("../utils/emailSender");
 class AuthController {
     registerUser(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -37,31 +36,18 @@ class AuthController {
                 // hash password
                 const salt = yield (0, bcrypt_1.genSalt)(10);
                 const hashPassword = yield (0, bcrypt_1.hash)(password, salt);
-                // Generate otp
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
-                // Generate verification token
-                const verificationToken = (0, jsonwebtoken_1.sign)({ email }, process.env.TOKEN_KEY || "secret", { expiresIn: "1h" });
                 const newUser = yield prisma_1.default.user.create({
                     data: {
                         username,
                         email,
                         password: hashPassword,
                         role,
-                        verificationToken,
                     },
                 });
-                // Send verification email
-                const subject = "Verify your email address";
-                const content = null;
-                const data = {
-                    username,
-                    link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
-                };
-                yield (0, emailSender_1.sendEmail)(email, subject, 'templates/register.hbs', data);
                 return resp.status(201).send({
                     rc: 201,
                     success: true,
-                    message: "User registered successfully. Please check your email for verification.",
+                    message: "User registered successfully.",
                 });
             }
             catch (error) {
@@ -95,118 +81,6 @@ class AuthController {
             catch (error) {
                 console.log(error);
                 return resp.status(500).send(error);
-            }
-        });
-    }
-    verifyEmail(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { token } = req.params;
-                // Temukan pengguna berdasarkan token verifikasi
-                const user = yield prisma_1.default.user.findFirst({
-                    where: {
-                        verificationToken: token,
-                    },
-                });
-                if (!user) {
-                    return resp.status(400).send({
-                        rc: 400,
-                        success: false,
-                        message: "Invalid verification token",
-                    });
-                }
-                // Update status verifikasi pengguna menjadi true
-                const updatedUser = yield prisma_1.default.user.update({
-                    where: {
-                        id: user.id,
-                    },
-                    data: {
-                        isVerified: true,
-                        verificationToken: null,
-                    },
-                });
-                return resp.status(200).send({
-                    rc: 200,
-                    success: true,
-                    message: "Email verified successfully",
-                    data: updatedUser,
-                });
-            }
-            catch (error) {
-                console.log(error);
-                return resp.status(500).send(error);
-            }
-        });
-    }
-    forgotPassword(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { email } = req.body;
-                if (!email) {
-                    return resp.status(400).json({ message: "Email is required" });
-                }
-                const findUser = yield prisma_1.default.user.findUnique({
-                    where: { email, isVerified: true },
-                });
-                if (!findUser) {
-                    return resp.status(400).json({ message: "Invalid user" });
-                }
-                const username = findUser.username;
-                const token = (0, jsonwebtoken_1.sign)({ id: findUser.id, role: findUser.role }, process.env.TOKEN_KEY || "secret", { expiresIn: "1h" } // Waktu kadaluarsa token
-                );
-                const subject = "Reset Password";
-                const data = {
-                    username,
-                    link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password/${token}`,
-                };
-                yield (0, emailSender_1.forgotPassword)(email, subject, null, data);
-                return resp.status(201).json({
-                    rc: 201,
-                    success: true,
-                    message: "Password reset email sent successfully",
-                });
-            }
-            catch (error) {
-                // Cast 'error' to 'any' to access its properties
-                const errorMessage = error.message || "An unknown error occurred";
-                console.error("Forgot password error:", errorMessage);
-                return resp.status(500).json({
-                    message: "An error occurred while processing your request",
-                    error: errorMessage,
-                });
-            }
-        });
-    }
-    resetPassword(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { token } = req.params;
-                const { password } = req.body;
-                // Verifikasi token
-                const decodedToken = (0, jsonwebtoken_1.verify)(token, process.env.TOKEN_KEY || "secret");
-                const userId = decodedToken.id;
-                const findUser = yield prisma_1.default.user.findUnique({
-                    where: { id: userId },
-                });
-                if (!findUser) {
-                    return resp.status(400).json({ message: "Invalid user" });
-                }
-                // Hash password
-                const salt = yield (0, bcrypt_1.genSalt)(10);
-                const hashPassword = yield (0, bcrypt_1.hash)(password, salt);
-                const updatedUser = yield prisma_1.default.user.update({
-                    where: { id: userId },
-                    data: { password: hashPassword },
-                });
-                return resp.status(200).json({
-                    rc: 200,
-                    success: true,
-                    message: "Password reset successfully",
-                });
-            }
-            catch (error) {
-                console.error("Error in resetPassword:", error);
-                return resp.status(500).json({ message: "Internal Server Error" });
             }
         });
     }

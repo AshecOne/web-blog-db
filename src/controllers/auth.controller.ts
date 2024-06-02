@@ -1,20 +1,19 @@
 import { genSalt, hash, compareSync } from "bcrypt";
 import prisma from "../prisma";
 import { Request, Response } from "express";
-import { sign, verify } from "jsonwebtoken";
-import { forgotPassword, sendEmail } from "../utils/emailSender";
+import { sign } from "jsonwebtoken";
 
 export class AuthController {
   async registerUser(req: Request, resp: Response) {
     try {
       const { username, email, password, role } = req.body;
       console.log(req.body);
-
+  
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
       console.log(existingUser);
-
+  
       if (existingUser) {
         return resp.status(400).send({
           rc: 400,
@@ -22,45 +21,24 @@ export class AuthController {
           message: "Email has been registered",
         });
       }
-
+  
       // hash password
       const salt = await genSalt(10);
       const hashPassword = await hash(password, salt);
-
-      // Generate otp
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-      // Generate verification token
-    const verificationToken = sign(
-      { email },
-      process.env.TOKEN_KEY || "secret",
-      { expiresIn: "1h" }
-    );
-
-    const newUser = await prisma.user.create({
-      data: {
-        username,
-        email,
-        password: hashPassword,
-        role,
-        verificationToken,
-      },
-    });
-
-    // Send verification email
-    const subject = "Verify your email address";
-    const content = null;
-    const data = {
-      username,
-      link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
-    };
-    await sendEmail(email, subject, 'templates/register.hbs', data);
-
+  
+      const newUser = await prisma.user.create({
+        data: {
+          username,
+          email,
+          password: hashPassword,
+          role,
+        },
+      });
+  
       return resp.status(201).send({
         rc: 201,
         success: true,
-        message:
-          "User registered successfully. Please check your email for verification.",
+        message: "User registered successfully.",
       });
     } catch (error) {
       console.log(error);
@@ -92,133 +70,6 @@ export class AuthController {
     } catch (error) {
       console.log(error);
       return resp.status(500).send(error);
-    }
-  }
-
-  async verifyEmail(req: Request, resp: Response) {
-    try {
-      const { token } = req.params;
-  
-      // Temukan pengguna berdasarkan token verifikasi
-      const user = await prisma.user.findFirst({
-        where: {
-          verificationToken: token,
-        },
-      });
-  
-      if (!user) {
-        return resp.status(400).send({
-          rc: 400,
-          success: false,
-          message: "Invalid verification token",
-        });
-      }
-  
-      // Update status verifikasi pengguna menjadi true
-      const updatedUser = await prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          isVerified: true,
-          verificationToken: null,
-        },
-      });
-  
-      return resp.status(200).send({
-        rc: 200,
-        success: true,
-        message: "Email verified successfully",
-        data: updatedUser,
-      });
-    } catch (error) {
-      console.log(error);
-      return resp.status(500).send(error);
-    }
-  }
-
-  async forgotPassword(req: Request, resp: Response) {
-    try {
-      const { email } = req.body;
-      if (!email) {
-        return resp.status(400).json({ message: "Email is required" });
-      }
-  
-      const findUser = await prisma.user.findUnique({
-        where: { email, isVerified: true },
-      });
-  
-      if (!findUser) {
-        return resp.status(400).json({ message: "Invalid user" });
-      }
-  
-      const username = findUser.username;
-      const token = sign(
-        { id: findUser.id, role: findUser.role },
-        process.env.TOKEN_KEY || "secret",
-        { expiresIn: "1h" } // Waktu kadaluarsa token
-      );
-  
-      const subject = "Reset Password";
-      const data = {
-        username,
-        link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password/${token}`,
-      };
-  
-      await forgotPassword(email, subject, null, data);
-  
-      return resp.status(201).json({
-        rc: 201,
-        success: true,
-        message: "Password reset email sent successfully",
-      });
-    } catch (error) {
-      // Cast 'error' to 'any' to access its properties
-      const errorMessage =
-        (error as any).message || "An unknown error occurred";
-      console.error("Forgot password error:", errorMessage);
-  
-      return resp.status(500).json({
-        message: "An error occurred while processing your request",
-        error: errorMessage,
-      });
-    }
-  }
-
-  async resetPassword(req: Request, resp: Response) {
-    try {
-      const { token } = req.params;
-      const { password } = req.body;
-
-      // Verifikasi token
-      const decodedToken = verify(token, process.env.TOKEN_KEY || "secret") as { id: number };
-      const userId = decodedToken.id;
-
-      const findUser = await prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!findUser) {
-        return resp.status(400).json({ message: "Invalid user" });
-      }
-
-      // Hash password
-      const salt = await genSalt(10);
-      const hashPassword = await hash(password, salt);
-
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: { password: hashPassword },
-      });
-
-      return resp.status(200).json({
-        rc: 200,
-        success: true,
-        message: "Password reset successfully",
-      });
-    } catch (error) {
-      console.error("Error in resetPassword:", error);
-      return resp.status(500).json({ message: "Internal Server Error" });
     }
   }
 
