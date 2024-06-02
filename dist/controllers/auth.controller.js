@@ -57,7 +57,7 @@ class AuthController {
                     username,
                     link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
                 };
-                yield (0, emailSender_1.sendEmail)(email, subject, content, data);
+                yield (0, emailSender_1.sendEmail)(email, subject, 'templates/register.hbs', data);
                 return resp.status(201).send({
                     rc: 201,
                     success: true,

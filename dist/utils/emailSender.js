@@ -19,7 +19,7 @@ const fs_1 = __importDefault(require("fs"));
 const handlebars_1 = __importDefault(require("handlebars"));
 const sendEmail = (email, subject, content, data) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const templatePath = path_1.default.join(__dirname, "../templates", "register.hbs");
+        const templatePath = path_1.default.join(__dirname, "../../templates", "register.hbs");
         const templateSource = yield fs_1.default.readFileSync(templatePath, "utf-8");
         const compiledTemplate = handlebars_1.default.compile(templateSource);
         const html = compiledTemplate(data);
@@ -37,7 +37,7 @@ const sendEmail = (email, subject, content, data) => __awaiter(void 0, void 0, v
 exports.sendEmail = sendEmail;
 const forgotPassword = (email, subject, content, data) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const templatePath = path_1.default.join(__dirname, "../templates", "forgotpassword.hbs");
+        const templatePath = path_1.default.join(__dirname, "../../templates", "forgotpassword.hbs");
         const templateSource = yield fs_1.default.readFileSync(templatePath, "utf-8");
         const compiledTemplate = handlebars_1.default.compile(templateSource);
         const html = compiledTemplate(data);
