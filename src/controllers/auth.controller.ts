@@ -54,7 +54,7 @@ export class AuthController {
       username,
       link: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/verify-email/${verificationToken}`,
     };
-    await sendEmail(email, subject, content, data);
+    await sendEmail(email, subject, 'templates/register.hbs', data);
 
       return resp.status(201).send({
         rc: 201,

@@ -6,7 +6,7 @@ import handlebars from "handlebars";
 
 export const sendEmail = async (email: string, subject: string, content: string | null, data?: { username: string; otp?: string; link: string }) => {
     try {
-        const templatePath = path.join(__dirname, "../templates", "register.hbs")
+        const templatePath = path.join(__dirname, "../../templates", "register.hbs");
         const templateSource = await fs.readFileSync(templatePath, "utf-8");
         const compiledTemplate = handlebars.compile(templateSource);
         const html = compiledTemplate(data)
@@ -23,7 +23,7 @@ export const sendEmail = async (email: string, subject: string, content: string 
 
 export const forgotPassword = async (email: string, subject: string, content: string | null, data?: { username: string; otp?: string; link: string }) => {
     try {
-        const templatePath = path.join(__dirname, "../templates", "forgotpassword.hbs")
+        const templatePath = path.join(__dirname, "../../templates", "forgotpassword.hbs");
         const templateSource = await fs.readFileSync(templatePath, "utf-8");
         const compiledTemplate = handlebars.compile(templateSource);
         const html = compiledTemplate(data)
