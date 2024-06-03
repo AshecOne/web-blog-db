@@ -16,9 +16,14 @@ exports.AuthController = void 0;
 const bcrypt_1 = require("bcrypt");
 const prisma_1 = __importDefault(require("../prisma"));
 const jsonwebtoken_1 = require("jsonwebtoken");
+const express_validator_1 = require("express-validator");
 class AuthController {
     registerUser(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return resp.status(400).json({ errors: errors.array() });
+            }
             try {
                 const { username, email, password, role } = req.body;
                 console.log(req.body);
@@ -56,34 +61,6 @@ class AuthController {
             }
         });
     }
-    checkEmailExists(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { email } = req.query;
-                const user = yield prisma_1.default.user.findUnique({
-                    where: { email: email },
-                });
-                if (user) {
-                    return resp.status(200).send({
-                        rc: 200,
-                        success: true,
-                        exists: true,
-                    });
-                }
-                else {
-                    return resp.status(200).send({
-                        rc: 200,
-                        success: true,
-                        exists: false,
-                    });
-                }
-            }
-            catch (error) {
-                console.log(error);
-                return resp.status(500).send(error);
-            }
-        });
-    }
     signIn(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -93,10 +70,7 @@ class AuthController {
                 // Cari pengguna berdasarkan email atau username
                 const findUser = yield prisma_1.default.user.findFirst({
                     where: {
-                        OR: [
-                            { email: emailOrUsername },
-                            { username: emailOrUsername },
-                        ],
+                        OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
                     },
                 });
                 console.log(findUser);

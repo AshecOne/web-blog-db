@@ -2,18 +2,23 @@ import { genSalt, hash, compareSync } from "bcrypt";
 import prisma from "../prisma";
 import { Request, Response } from "express";
 import { sign } from "jsonwebtoken";
+import { validationResult } from "express-validator";
 
 export class AuthController {
   async registerUser(req: Request, resp: Response) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return resp.status(400).json({ errors: errors.array() });
+    }
     try {
       const { username, email, password, role } = req.body;
       console.log(req.body);
-  
+
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
       console.log(existingUser);
-  
+
       if (existingUser) {
         return resp.status(400).send({
           rc: 400,
@@ -21,11 +26,11 @@ export class AuthController {
           message: "Email has been registered",
         });
       }
-  
+
       // hash password
       const salt = await genSalt(10);
       const hashPassword = await hash(password, salt);
-  
+
       const newUser = await prisma.user.create({
         data: {
           username,
@@ -34,39 +39,12 @@ export class AuthController {
           role,
         },
       });
-  
+
       return resp.status(201).send({
         rc: 201,
         success: true,
         message: "User registered successfully.",
       });
-    } catch (error) {
-      console.log(error);
-      return resp.status(500).send(error);
-    }
-  }
-
-  async checkEmailExists(req: Request, resp: Response) {
-    try {
-      const { email } = req.query;
-  
-      const user = await prisma.user.findUnique({
-        where: { email: email as string },
-      });
-  
-      if (user) {
-        return resp.status(200).send({
-          rc: 200,
-          success: true,
-          exists: true,
-        });
-      } else {
-        return resp.status(200).send({
-          rc: 200,
-          success: true,
-          exists: false,
-        });
-      }
     } catch (error) {
       console.log(error);
       return resp.status(500).send(error);
@@ -81,10 +59,7 @@ export class AuthController {
       // Cari pengguna berdasarkan email atau username
       const findUser = await prisma.user.findFirst({
         where: {
-          OR: [
-            { email: emailOrUsername},
-            { username: emailOrUsername},
-          ],
+          OR: [{ email: emailOrUsername }, { username: emailOrUsername }],
         },
       });
 
