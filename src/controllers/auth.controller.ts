@@ -8,7 +8,8 @@ export class AuthController {
   async registerUser(req: Request, resp: Response) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return resp.status(400).json({ errors: errors.array() });
+      const errorMessages = errors.array().map((error) => error.msg);
+      return resp.status(400).json({ message: errorMessages.join(", ") });
     }
     try {
       const { username, email, password, role } = req.body;
@@ -66,6 +67,26 @@ export class AuthController {
       console.log(findUser);
 
       if (findUser) {
+        if (
+          findUser.limitWrongPassword >= Number(process.env.MAX_FORGOT_PASSWORD)
+        ) {
+          const lastUpdateTime = findUser.updatedAt?.getTime() || 0;
+          const currentTime = Date.now();
+          const timeDifference = currentTime - lastUpdateTime;
+          const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
+
+          if (hoursDifference < 24) {
+            throw new Error(
+              "Your account is locked. Please try again after 24 hours."
+            );
+          } else {
+            // Reset limitWrongPassword jika sudah lebih dari 24 jam
+            await prisma.user.update({
+              where: { id: findUser?.id },
+              data: { limitWrongPassword: 0 },
+            });
+          }
+        }
         // Periksa kecocokan password
         const isPasswordValid = await compareSync(password, findUser.password);
 

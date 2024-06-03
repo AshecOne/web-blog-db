@@ -4,15 +4,9 @@ import prisma from "../prisma";
 export class ArticleController {
   async createArticle(req: Request, resp: Response) {
     try {
-      const { title, urlImage, description, categoryId, authorId } = req.body;
+      const { title, urlImage, description, categoryId } = req.body;
+      const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
       console.log(req.body);
-      if (!authorId) {
-        return resp.status(400).send({
-          rc: 400,
-          success: false,
-          message: "Author ID is required",
-        });
-      }
 
       // Cari User berdasarkan id
       const user = await prisma.user.findUnique({
@@ -68,12 +62,12 @@ export class ArticleController {
   }
 
   async updateArticle(req: Request, resp: Response) {
-    const { id } = req.params;
+    const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
     const updateData = req.body;
 
     try {
       const updatedArticle = await prisma.article.update({
-        where: { id: Number(id) },
+        where: { id: Number(authorId) },
         data: updateData,
       });
 
@@ -94,13 +88,13 @@ export class ArticleController {
   }
 
   async getArticlesByAuthorId(req: Request, resp: Response) {
-    const { authorId } = req.params;
-
     try {
+      const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
+  
       const articles = await prisma.article.findMany({
         where: { authorId: Number(authorId) },
       });
-
+  
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -118,11 +112,11 @@ export class ArticleController {
   }
 
   async deleteArticle(req: Request, resp: Response) {
-    const { id } = req.params;
+    const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
 
     try {
       await prisma.article.delete({
-        where: { id: Number(id) },
+        where: { id: Number(authorId) },
       });
 
       return resp.status(200).send({

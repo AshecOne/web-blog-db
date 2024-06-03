@@ -3,7 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.regisValidation = void 0;
 const express_validator_1 = require("express-validator");
 exports.regisValidation = [
-    (0, express_validator_1.body)("username").notEmpty().withMessage("Username is required"),
+    (0, express_validator_1.body)("username")
+        .notEmpty()
+        .withMessage("Username is required")
+        .isAlpha()
+        .withMessage("Username must contain only letters"),
     (0, express_validator_1.body)("email")
         .notEmpty()
         .withMessage("Email is required")

@@ -22,7 +22,8 @@ class AuthController {
         return __awaiter(this, void 0, void 0, function* () {
             const errors = (0, express_validator_1.validationResult)(req);
             if (!errors.isEmpty()) {
-                return resp.status(400).json({ errors: errors.array() });
+                const errorMessages = errors.array().map((error) => error.msg);
+                return resp.status(400).json({ message: errorMessages.join(", ") });
             }
             try {
                 const { username, email, password, role } = req.body;
@@ -63,6 +64,7 @@ class AuthController {
     }
     signIn(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
                 console.log("Request body:", req.body);
                 const { emailOrUsername, password } = req.body;
@@ -75,6 +77,22 @@ class AuthController {
                 });
                 console.log(findUser);
                 if (findUser) {
+                    if (findUser.limitWrongPassword >= Number(process.env.MAX_FORGOT_PASSWORD)) {
+                        const lastUpdateTime = ((_a = findUser.updatedAt) === null || _a === void 0 ? void 0 : _a.getTime()) || 0;
+                        const currentTime = Date.now();
+                        const timeDifference = currentTime - lastUpdateTime;
+                        const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
+                        if (hoursDifference < 24) {
+                            throw new Error("Your account is locked. Please try again after 24 hours.");
+                        }
+                        else {
+                            // Reset limitWrongPassword jika sudah lebih dari 24 jam
+                            yield prisma_1.default.user.update({
+                                where: { id: findUser === null || findUser === void 0 ? void 0 : findUser.id },
+                                data: { limitWrongPassword: 0 },
+                            });
+                        }
+                    }
                     // Periksa kecocokan password
                     const isPasswordValid = yield (0, bcrypt_1.compareSync)(password, findUser.password);
                     if (!isPasswordValid) {

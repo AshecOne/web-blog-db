@@ -2,7 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 
 export const regisValidation = [
-  body("username").notEmpty().withMessage("Username is required"),
+  body("username")
+    .notEmpty()
+    .withMessage("Username is required")
+    .isAlpha()
+    .withMessage("Username must contain only letters"),
   body("email")
     .notEmpty()
     .withMessage("Email is required")

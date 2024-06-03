@@ -18,15 +18,9 @@ class ArticleController {
     createArticle(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { title, urlImage, description, categoryId, authorId } = req.body;
+                const { title, urlImage, description, categoryId } = req.body;
+                const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
                 console.log(req.body);
-                if (!authorId) {
-                    return resp.status(400).send({
-                        rc: 400,
-                        success: false,
-                        message: "Author ID is required",
-                    });
-                }
                 // Cari User berdasarkan id
                 const user = yield prisma_1.default.user.findUnique({
                     where: { id: authorId },
@@ -78,11 +72,11 @@ class ArticleController {
     }
     updateArticle(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { id } = req.params;
+            const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
             const updateData = req.body;
             try {
                 const updatedArticle = yield prisma_1.default.article.update({
-                    where: { id: Number(id) },
+                    where: { id: Number(authorId) },
                     data: updateData,
                 });
                 return resp.status(200).send({
@@ -104,8 +98,8 @@ class ArticleController {
     }
     getArticlesByAuthorId(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { authorId } = req.params;
             try {
+                const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
                 const articles = yield prisma_1.default.article.findMany({
                     where: { authorId: Number(authorId) },
                 });
@@ -128,10 +122,10 @@ class ArticleController {
     }
     deleteArticle(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { id } = req.params;
+            const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
             try {
                 yield prisma_1.default.article.delete({
-                    where: { id: Number(id) },
+                    where: { id: Number(authorId) },
                 });
                 return resp.status(200).send({
                     rc: 200,
