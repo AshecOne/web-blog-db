@@ -62,15 +62,35 @@ export class ArticleController {
   }
 
   async updateArticle(req: Request, resp: Response) {
-    const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
+    const { id } = req.params; // Mengambil ID artikel dari parameter URL
     const updateData = req.body;
-
+  
     try {
+      const article = await prisma.article.findUnique({
+        where: { id: Number(id) },
+      });
+  
+      if (!article) {
+        return resp.status(404).send({
+          rc: 404,
+          success: false,
+          message: "Article not found",
+        });
+      }
+  
+      if (article.authorId !== resp.locals.user.id) {
+        return resp.status(403).send({
+          rc: 403,
+          success: false,
+          message: "You are not authorized to update this article",
+        });
+      }
+  
       const updatedArticle = await prisma.article.update({
-        where: { id: Number(authorId) },
+        where: { id: Number(id) },
         data: updateData,
       });
-
+  
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -112,13 +132,33 @@ export class ArticleController {
   }
 
   async deleteArticle(req: Request, resp: Response) {
-    const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
-
+    const { id } = req.params; // Mengambil ID artikel dari parameter URL
+  
     try {
-      await prisma.article.delete({
-        where: { id: Number(authorId) },
+      const article = await prisma.article.findUnique({
+        where: { id: Number(id) },
       });
-
+  
+      if (!article) {
+        return resp.status(404).send({
+          rc: 404,
+          success: false,
+          message: "Article not found",
+        });
+      }
+  
+      if (article.authorId !== resp.locals.user.id) {
+        return resp.status(403).send({
+          rc: 403,
+          success: false,
+          message: "You are not authorized to delete this article",
+        });
+      }
+  
+      await prisma.article.delete({
+        where: { id: Number(id) },
+      });
+  
       return resp.status(200).send({
         rc: 200,
         success: true,

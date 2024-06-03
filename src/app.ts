@@ -33,10 +33,6 @@ class App {
     const articleRouter = new ArticleRouter();
     const authRouter = new AuthRouter();
 
-    this.app.get("/api", (req: Request, resp: Response) => {
-      return resp.status(200).send("PRISMA API");
-    });
-
     this.app.use("/users", userRouter.getRouter());
     this.app.use("/categories", categoryRouter.getRouter());
     this.app.use("/articles", articleRouter.getRouter());
