@@ -74,10 +74,13 @@ class ArticleController {
         return __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params; // Mengambil ID artikel dari parameter URL
             const updateData = req.body;
+            console.log("Article ID:", id);
+            console.log("Update Data:", updateData);
             try {
                 const article = yield prisma_1.default.article.findUnique({
                     where: { id: Number(id) },
                 });
+                console.log("Found Article:", article);
                 if (!article) {
                     return resp.status(404).send({
                         rc: 404,
@@ -96,6 +99,7 @@ class ArticleController {
                     where: { id: Number(id) },
                     data: updateData,
                 });
+                console.log("Updated Article:", updatedArticle);
                 return resp.status(200).send({
                     rc: 200,
                     success: true,
@@ -104,7 +108,7 @@ class ArticleController {
                 });
             }
             catch (error) {
-                console.error(error);
+                console.error("Error updating article:", error);
                 return resp.status(500).send({
                     rc: 500,
                     success: false,
