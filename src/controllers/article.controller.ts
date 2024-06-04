@@ -64,12 +64,12 @@ export class ArticleController {
   async updateArticle(req: Request, resp: Response) {
     const { id } = req.params;
     const { title, description, urlImage, categoryId } = req.body;
-  
+
     try {
       const article = await prisma.article.findUnique({
         where: { id: Number(id) },
       });
-  
+
       if (!article) {
         return resp.status(404).send({
           rc: 404,
@@ -77,7 +77,7 @@ export class ArticleController {
           message: "Article not found",
         });
       }
-  
+
       if (article.authorId !== resp.locals.user.id) {
         return resp.status(403).send({
           rc: 403,
@@ -85,7 +85,7 @@ export class ArticleController {
           message: "You are not authorized to update this article",
         });
       }
-  
+
       const updatedArticle = await prisma.article.update({
         where: { id: Number(id) },
         data: {
@@ -95,7 +95,7 @@ export class ArticleController {
           categoryId,
         },
       });
-  
+
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -115,11 +115,11 @@ export class ArticleController {
   async getArticlesByAuthorId(req: Request, resp: Response) {
     try {
       const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
-  
+
       const articles = await prisma.article.findMany({
         where: { authorId: Number(authorId) },
       });
-  
+
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -138,12 +138,12 @@ export class ArticleController {
 
   async deleteArticle(req: Request, resp: Response) {
     const { id } = req.params; // Mengambil ID artikel dari parameter URL
-  
+
     try {
       const article = await prisma.article.findUnique({
         where: { id: Number(id) },
       });
-  
+
       if (!article) {
         return resp.status(404).send({
           rc: 404,
@@ -151,7 +151,7 @@ export class ArticleController {
           message: "Article not found",
         });
       }
-  
+
       if (article.authorId !== resp.locals.user.id) {
         return resp.status(403).send({
           rc: 403,
@@ -159,11 +159,11 @@ export class ArticleController {
           message: "You are not authorized to delete this article",
         });
       }
-  
+
       await prisma.article.delete({
         where: { id: Number(id) },
       });
-  
+
       return resp.status(200).send({
         rc: 200,
         success: true,
@@ -200,6 +200,50 @@ export class ArticleController {
         rc: 500,
         success: false,
         message: "Failed to retrieve articles",
+      });
+    }
+  }
+
+  async searchArticles(req: Request, resp: Response) {
+    const { query, startDate, endDate } = req.query;
+
+    try {
+      const whereClause: any = {
+        OR: [
+          { title: { contains: query as string } },
+          { author: { username: { contains: query as string } } },
+          { category: { title: { contains: query as string } } },
+        ],
+      };
+
+      if (startDate && endDate) {
+        whereClause.createdAt = {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string),
+        };
+      }
+
+      const articles = await prisma.article.findMany({
+        where: whereClause,
+        include: {
+          author: true,
+          category: true,
+        },
+        take: 3,
+      });
+
+      return resp.status(200).send({
+        rc: 200,
+        success: true,
+        message: "Articles searched successfully",
+        data: articles,
+      });
+    } catch (error) {
+      console.error(error);
+      return resp.status(500).send({
+        rc: 500,
+        success: false,
+        message: "Failed to search articles",
       });
     }
   }

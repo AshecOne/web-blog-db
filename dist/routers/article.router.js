@@ -16,6 +16,7 @@ class ArticleRouter {
         this.route.delete("/:id", protectedRoute_1.authMiddleware, protectedRoute_1.authorizeAuthor, this.articleController.deleteArticle);
         this.route.get("/:authorId", protectedRoute_1.authMiddleware, protectedRoute_1.authorizeAuthor, this.articleController.getArticlesByAuthorId);
         this.route.get("/", this.articleController.getAllArticles);
+        this.route.get("/search", this.articleController.searchArticles);
     }
     getRouter() {
         return this.route;

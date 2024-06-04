@@ -18,6 +18,7 @@ export class ArticleRouter {
     this.route.delete("/:id", authMiddleware, authorizeAuthor,this.articleController.deleteArticle);
     this.route.get("/:authorId", authMiddleware, authorizeAuthor,this.articleController.getArticlesByAuthorId);
     this.route.get("/", this.articleController.getAllArticles);
+    this.route.get("/search", this.articleController.searchArticles);
   }
 
   getRouter(): Router {
