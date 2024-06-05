@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRouter = void 0;
 const express_1 = require("express");
 const user_controller_1 = require("../controllers/user.controller");
+const protectedRoute_1 = require("../middleware/protectedRoute");
 class UserRouter {
     constructor() {
         this.route = (0, express_1.Router)();
@@ -10,8 +11,7 @@ class UserRouter {
         this.initializeRoutes();
     }
     initializeRoutes() {
-        this.route.post("/signup", this.userController.signUp);
-        this.route.get("/signin", this.userController.signIn);
+        this.route.put("/", protectedRoute_1.authMiddleware, protectedRoute_1.authorizeAuthor, this.userController.updateProfile);
     }
     getRouter() {
         return this.route;
