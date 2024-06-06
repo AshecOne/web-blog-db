@@ -206,7 +206,7 @@ export class ArticleController {
 
   async searchArticles(req: Request, resp: Response) {
     const { query, startDate, endDate } = req.query;
-
+  
     try {
       const whereClause: any = {
         OR: [
@@ -215,14 +215,14 @@ export class ArticleController {
           { category: { title: { contains: query as string } } },
         ],
       };
-
+  
       if (startDate && endDate) {
         whereClause.createdAt = {
           gte: new Date(startDate as string),
           lte: new Date(endDate as string),
         };
       }
-
+  
       const articles = await prisma.article.findMany({
         where: whereClause,
         include: {
@@ -231,7 +231,7 @@ export class ArticleController {
         },
         take: 3,
       });
-
+  
       return resp.status(200).send({
         rc: 200,
         success: true,
