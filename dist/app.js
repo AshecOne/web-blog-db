@@ -21,6 +21,7 @@ const article_router_1 = require("./routers/article.router");
 const category_router_1 = require("./routers/category.router");
 const user_router_1 = require("./routers/user.router");
 const auth_router_1 = require("./routers/auth.router");
+const protectedRoute_1 = require("./middleware/protectedRoute");
 const PORT = process.env.PORT;
 class App {
     constructor() {
@@ -30,7 +31,7 @@ class App {
     }
     configure() {
         this.app.use((0, cors_1.default)({
-            origin: 'https://ashecone.github.io',
+            origin: "https://ashecone.github.io",
         })); // for config accessibility
         this.app.use(express_1.default.json()); // for receive req.body
     }
@@ -40,7 +41,7 @@ class App {
         const categoryRouter = new category_router_1.CategoryRouter();
         const articleRouter = new article_router_1.ArticleRouter();
         const authRouter = new auth_router_1.AuthRouter();
-        this.app.use("/users", userRouter.getRouter());
+        this.app.use("/users", protectedRoute_1.authMiddleware, protectedRoute_1.authorizeAuthor, userRouter.getRouter());
         this.app.use("/categories", categoryRouter.getRouter());
         this.app.use("/articles", articleRouter.getRouter());
         this.app.use("/auth", authRouter.getRouter());

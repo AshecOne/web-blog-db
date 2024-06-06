@@ -7,6 +7,7 @@ import { ArticleRouter } from "./routers/article.router";
 import { CategoryRouter } from "./routers/category.router";
 import { UserRouter } from "./routers/user.router";
 import { AuthRouter } from "./routers/auth.router";
+import { authMiddleware, authorizeAuthor } from "./middleware/protectedRoute";
 
 const PORT = process.env.PORT;
 
@@ -20,9 +21,11 @@ class App {
   }
 
   private configure(): void {
-    this.app.use(cors({
-      origin: 'https://ashecone.github.io',
-    })); // for config accessibility
+    this.app.use(
+      cors({
+        origin: "https://ashecone.github.io",
+      })
+    ); // for config accessibility
     this.app.use(express.json()); // for receive req.body
   }
 
@@ -33,7 +36,12 @@ class App {
     const articleRouter = new ArticleRouter();
     const authRouter = new AuthRouter();
 
-    this.app.use("/users", userRouter.getRouter());
+    this.app.use(
+      "/users",
+      authMiddleware,
+      authorizeAuthor,
+      userRouter.getRouter()
+    );
     this.app.use("/categories", categoryRouter.getRouter());
     this.app.use("/articles", articleRouter.getRouter());
     this.app.use("/auth", authRouter.getRouter());

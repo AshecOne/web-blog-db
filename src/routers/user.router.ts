@@ -1,6 +1,5 @@
 import express, { Router } from "express";
 import { UserController } from "../controllers/user.controller";
-import { authMiddleware, authorizeAuthor } from "../middleware/protectedRoute";
 
 export class UserRouter {
   private route: Router;
@@ -13,7 +12,26 @@ export class UserRouter {
   }
 
   private initializeRoutes(): void {
-    this.route.put("/", authMiddleware, authorizeAuthor, this.userController.updateProfile);
+    this.route.put(
+      "/",
+      this.userController.updateProfile
+    );
+    this.route.post(
+      "/",
+      this.userController.createArticle
+    );
+    this.route.put(
+      "/:id",
+      this.userController.updateArticle
+    );
+    this.route.delete(
+      "/:id",
+      this.userController.deleteArticle
+    );
+    this.route.get(
+      "/:authorId",
+      this.userController.getArticlesByAuthorId
+    );
   }
 
   getRouter(): Router {
