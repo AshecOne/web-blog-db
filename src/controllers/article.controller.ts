@@ -206,7 +206,7 @@ export class ArticleController {
 
   async searchArticles(req: Request, resp: Response) {
     const { query, startDate, endDate } = req.query;
-  
+    console.log("Received search request:", req.query);
     try {
       const whereClause: any = {
         OR: [

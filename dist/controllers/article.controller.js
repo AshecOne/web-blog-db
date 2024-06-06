@@ -211,6 +211,7 @@ class ArticleController {
     searchArticles(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             const { query, startDate, endDate } = req.query;
+            console.log("Received search request:", req.query);
             try {
                 const whereClause = {
                     OR: [
