@@ -29,7 +29,7 @@ export class UserRouter {
       this.userController.deleteArticle
     );
     this.route.get(
-      "/:authorId",
+      "/",
       this.userController.getArticlesByAuthorId
     );
   }

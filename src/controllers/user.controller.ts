@@ -141,7 +141,7 @@ export class UserController {
 
   async getArticlesByAuthorId(req: Request, resp: Response) {
     try {
-      const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
+      const authorId = resp.locals.user.id;
 
       const articles = await prisma.article.findMany({
         where: { authorId: Number(authorId) },

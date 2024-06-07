@@ -147,7 +147,7 @@ class UserController {
     getArticlesByAuthorId(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const authorId = resp.locals.user.id; // Mengambil authorId dari token yang terautentikasi
+                const authorId = resp.locals.user.id;
                 const articles = yield prisma_1.default.article.findMany({
                     where: { authorId: Number(authorId) },
                 });

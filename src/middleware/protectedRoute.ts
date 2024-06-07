@@ -1,12 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
     console.log("Token from header:", token);
-  
     if (!token) {
-      console.log("No token provided, authorization denied");
       return res.status(401).json({ message: "No token, authorization denied" });
     }
   
@@ -15,7 +17,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       res.locals.user = decodedToken;
       next();
     } catch (error) {
-      console.log("Invalid token");
       res.status(401).json({ message: "Token is not valid" });
     }
   };

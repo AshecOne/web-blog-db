@@ -14,7 +14,7 @@ class UserRouter {
         this.route.post("/", this.userController.createArticle);
         this.route.put("/:id", this.userController.updateArticle);
         this.route.delete("/:id", this.userController.deleteArticle);
-        this.route.get("/:authorId", this.userController.getArticlesByAuthorId);
+        this.route.get("/", this.userController.getArticlesByAuthorId);
     }
     getRouter() {
         return this.route;
