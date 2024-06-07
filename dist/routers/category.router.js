@@ -12,6 +12,7 @@ class CategoryRouter {
     initializeRoutes() {
         this.route.post("/", this.categoryController.createCategory);
         this.route.get("/", this.categoryController.fetchCategory);
+        this.route.get("/blogs", this.categoryController.fetchBlogCategories);
     }
     getRouter() {
         return this.route;

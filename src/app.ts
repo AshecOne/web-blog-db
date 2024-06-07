@@ -8,6 +8,7 @@ import { CategoryRouter } from "./routers/category.router";
 import { UserRouter } from "./routers/user.router";
 import { AuthRouter } from "./routers/auth.router";
 import { authMiddleware, authorizeAuthor } from "./middleware/protectedRoute";
+import { BlogRouter } from "./routers/blog.router";
 
 const PORT = process.env.PORT;
 
@@ -35,6 +36,7 @@ class App {
     const categoryRouter = new CategoryRouter();
     const articleRouter = new ArticleRouter();
     const authRouter = new AuthRouter();
+    const blogRouter = new BlogRouter();
 
     this.app.use(
       "/users",
@@ -43,6 +45,7 @@ class App {
       userRouter.getRouter()
     );
     this.app.use("/categories", categoryRouter.getRouter());
+    this.app.use("/blogs", blogRouter.getRouter());
     this.app.use("/articles", articleRouter.getRouter());
     this.app.use("/auth", authRouter.getRouter());
   }

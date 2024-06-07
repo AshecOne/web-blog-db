@@ -12,74 +12,63 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CategoryController = void 0;
+exports.BlogController = void 0;
 const prisma_1 = __importDefault(require("../prisma"));
-class CategoryController {
-    createCategory(req, resp) {
+class BlogController {
+    createBlog(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { urlImage, author, description, linkUrl, categoryId } = req.body;
             try {
-                const category = yield prisma_1.default.category.create({
-                    data: req.body,
-                });
-                return resp.status(201).send({
-                    rc: 201,
-                    success: true,
-                    message: "Create Category Success",
-                });
-            }
-            catch (error) {
-                console.log(error);
-            }
-        });
-    }
-    fetchCategory(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { id, title } = req.query;
-                const category = yield prisma_1.default.category.findMany({
-                    where: {
-                        id: id ? String(id) : undefined,
-                        title: title ? String(title) : undefined,
+                const blog = yield prisma_1.default.blog.create({
+                    data: {
+                        urlImage,
+                        author,
+                        description,
+                        linkUrl,
+                        categoryId,
                     },
                 });
                 return resp.status(201).send({
                     rc: 201,
                     success: true,
-                    message: "Fetch Category Success",
-                    data: category,
+                    message: "Create Blog Success",
+                    data: blog,
                 });
             }
             catch (error) {
-                console.log(error);
+                console.error(error);
+                return resp.status(500).send({
+                    rc: 500,
+                    success: false,
+                    message: "Failed to create blog",
+                });
             }
         });
     }
-    fetchBlogCategories(req, resp) {
+    fetchBlogs(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { id, title } = req.query;
-                const blogCategories = yield prisma_1.default.blogCategory.findMany({
-                    where: {
-                        id: id ? String(id) : undefined,
-                        title: title ? String(title) : undefined,
+                const blogs = yield prisma_1.default.blog.findMany({
+                    include: {
+                        category: true,
                     },
                 });
                 return resp.status(200).send({
                     rc: 200,
                     success: true,
-                    message: "Fetch Blog Categories Success",
-                    data: blogCategories,
+                    message: "Blogs retrieved successfully",
+                    data: blogs,
                 });
             }
             catch (error) {
-                console.log(error);
+                console.error(error);
                 return resp.status(500).send({
                     rc: 500,
                     success: false,
-                    message: "Failed to fetch blog categories",
+                    message: "Failed to retrieve blogs",
                 });
             }
         });
     }
 }
-exports.CategoryController = CategoryController;
+exports.BlogController = BlogController;

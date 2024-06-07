@@ -22,6 +22,7 @@ const category_router_1 = require("./routers/category.router");
 const user_router_1 = require("./routers/user.router");
 const auth_router_1 = require("./routers/auth.router");
 const protectedRoute_1 = require("./middleware/protectedRoute");
+const blog_router_1 = require("./routers/blog.router");
 const PORT = process.env.PORT;
 class App {
     constructor() {
@@ -41,8 +42,10 @@ class App {
         const categoryRouter = new category_router_1.CategoryRouter();
         const articleRouter = new article_router_1.ArticleRouter();
         const authRouter = new auth_router_1.AuthRouter();
+        const blogRouter = new blog_router_1.BlogRouter();
         this.app.use("/users", protectedRoute_1.authMiddleware, protectedRoute_1.authorizeAuthor, userRouter.getRouter());
         this.app.use("/categories", categoryRouter.getRouter());
+        this.app.use("/blogs", blogRouter.getRouter());
         this.app.use("/articles", articleRouter.getRouter());
         this.app.use("/auth", authRouter.getRouter());
     }
