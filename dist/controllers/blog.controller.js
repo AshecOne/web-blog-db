@@ -15,38 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogController = void 0;
 const prisma_1 = __importDefault(require("../prisma"));
 class BlogController {
-    createBlog(req, resp) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { urlImage, author, title, description, date, linkUrl, categoryId } = req.body;
-            try {
-                const blog = yield prisma_1.default.blog.create({
-                    data: {
-                        urlImage,
-                        author,
-                        title,
-                        description,
-                        date: new Date(date),
-                        linkUrl,
-                        categoryId,
-                    },
-                });
-                return resp.status(201).send({
-                    rc: 201,
-                    success: true,
-                    message: "Create Blog Success",
-                    data: blog,
-                });
-            }
-            catch (error) {
-                console.error(error);
-                return resp.status(500).send({
-                    rc: 500,
-                    success: false,
-                    message: "Failed to create blog",
-                });
-            }
-        });
-    }
     fetchBlogs(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -55,6 +23,7 @@ class BlogController {
                         category: true,
                     },
                 });
+                console.log("Fetched blogs:", blogs);
                 return resp.status(200).send({
                     rc: 200,
                     success: true,

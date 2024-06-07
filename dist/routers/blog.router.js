@@ -10,7 +10,6 @@ class BlogRouter {
         this.initializeRoutes();
     }
     initializeRoutes() {
-        this.route.post("/", this.blogController.createBlog);
         this.route.get("/", this.blogController.fetchBlogs);
     }
     getRouter() {

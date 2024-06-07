@@ -12,7 +12,6 @@ export class BlogRouter {
   }
 
   private initializeRoutes(): void {
-    this.route.post("/", this.blogController.createBlog);
     this.route.get("/", this.blogController.fetchBlogs);
   }
 
