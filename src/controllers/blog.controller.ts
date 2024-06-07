@@ -3,14 +3,17 @@ import prisma from "../prisma";
 
 export class BlogController {
   async createBlog(req: Request, resp: Response) {
-    const { urlImage, author, description, linkUrl, categoryId } = req.body;
+    const { urlImage, author, title, description, date, linkUrl, categoryId } =
+      req.body;
 
     try {
       const blog = await prisma.blog.create({
         data: {
           urlImage,
           author,
+          title,
           description,
+          date: new Date(date),
           linkUrl,
           categoryId,
         },

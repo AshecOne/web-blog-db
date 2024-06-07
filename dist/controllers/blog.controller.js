@@ -17,13 +17,15 @@ const prisma_1 = __importDefault(require("../prisma"));
 class BlogController {
     createBlog(req, resp) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { urlImage, author, description, linkUrl, categoryId } = req.body;
+            const { urlImage, author, title, description, date, linkUrl, categoryId } = req.body;
             try {
                 const blog = yield prisma_1.default.blog.create({
                     data: {
                         urlImage,
                         author,
+                        title,
                         description,
+                        date: new Date(date),
                         linkUrl,
                         categoryId,
                     },
