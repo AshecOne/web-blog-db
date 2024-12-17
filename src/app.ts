@@ -24,10 +24,18 @@ class App {
   private configure(): void {
     this.app.use(
       cors({
-        origin: "https://ashecone.github.io",
+        origin: [
+          "https://ashecone.github.io",
+          "https://ashecone.github.io/web-blog",
+          "https://ashecone.github.io/web-blog/",
+          "http://localhost:3000",
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
       })
-    ); // for config accessibility
-    this.app.use(express.json()); // for receive req.body
+    );
+    this.app.use(express.json());
   }
 
   // to define routes config from routers directory
@@ -48,6 +56,9 @@ class App {
     this.app.use("/blogs", blogRouter.getRouter());
     this.app.use("/articles", articleRouter.getRouter());
     this.app.use("/auth", authRouter.getRouter());
+    this.app.get("/", (req, res) => {
+      res.json({ message: "Blog API is running" });
+    });
   }
 
   public async start(): Promise<void> {
